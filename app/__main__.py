@@ -74,8 +74,8 @@ while running:
     piston_y = cy + r * math.sin(theta)
 
     # Calculate connecting rod end position (fixed rod end)
-    fixed_rod_x = crank_x
-    fixed_rod_y = cy + math.sqrt(l**2 - (crank_x - cx)**2)
+    fixed_rod_x = cx
+    fixed_rod_y = cy + math.sqrtl**2 - (crank_x - cx)**2)
 
     # Calculate linear force
     force = calculate_force(T, r)
