@@ -26,8 +26,8 @@ def cm_to_pixels(cm):
 # Parameters (initial values)
 T = 10  # Motor torque (N*m)
 r = cm_to_pixels(6)  # Crank radius (pixels)
-l = cm_to_pixels(20)  # Connecting rod length (pixels)
-OFFSET = cm_to_pixels(6)  # Offset for fixed rod end
+l = cm_to_pixels(30)  # Connecting rod length (pixels)
+OFFSET = cm_to_pixels(20)  # Offset for fixed rod end
 omega = 0.05  # Angular velocity (radians per frame)
 
 # Sliders
@@ -39,13 +39,13 @@ radius_slider = pygame_gui.elements.UIHorizontalSlider(
     start_value=r, value_range=(cm_to_pixels(1), cm_to_pixels(20)), manager=manager)
 rod_length_slider = pygame_gui.elements.UIHorizontalSlider(
     relative_rect=pygame.Rect((20, 600), (200, 30)), 
-    start_value=l, value_range=(cm_to_pixels(10), cm_to_pixels(50)), manager=manager)
+    start_value=l, value_range=(cm_to_pixels(5), cm_to_pixels(30)), manager=manager)
 omega_slider = pygame_gui.elements.UIHorizontalSlider(
     relative_rect=pygame.Rect((20, 640), (200, 30)), 
     start_value=omega, value_range=(math.pi, 6 * math.pi), manager=manager)
 time_slider = pygame_gui.elements.UIHorizontalSlider(
     relative_rect=pygame.Rect((20, 680), (200, 30)), 
-    start_value=1.0, value_range=(0.1, 5.0), manager=manager)  # Time controller slider
+    start_value=1.0, value_range=(0.1, 3.0), manager=manager)  # Time controller slider
 
 # Center of crankshaft
 cx, cy = WIDTH // 2, HEIGHT // 2 - 50
@@ -117,21 +117,22 @@ while running:
     zoomed_offset = OFFSET * zoom_level
     fixed_rod_x = cx
     fixed_rod_y = cy + zoomed_offset + zoomed_r * math.sin(theta)
+    zoomed_l = l * zoom_level
 
     # Calculate linear force
     force = calculate_force(T, zoomed_r)
 
     # Draw crankshaft
-    pygame.draw.line(screen, BLACK, (cx, cy), (crank_x, crank_y), 5)
+    pygame.draw.line(screen, BLACK, (cx, cy), (crank_x, crank_y), int(10 * zoom_level))
     pygame.draw.circle(screen, RED, (int(crank_x), int(crank_y)), int(10 * zoom_level))
     pygame.draw.circle(screen, GREEN, (cx, cy), int(zoomed_r), int(5 * zoom_level))
 
     # Draw connecting rod
-    pygame.draw.line(screen, BLUE, (crank_x, crank_y), (fixed_rod_x, fixed_rod_y - int(50 * zoom_level)), 5)
-    pygame.draw.circle(screen, BLACK, (int(fixed_rod_x), int(fixed_rod_y)), int(10 * zoom_level))
+    pygame.draw.line(screen, BLUE, (crank_x, crank_y), (fixed_rod_x, fixed_rod_y - int(50 * zoom_level) + 2*zoomed_r), int(15*zoom_level))
+    pygame.draw.circle(screen, BLACK, (int(fixed_rod_x), int(fixed_rod_y + 2*zoomed_r)), int(10 * zoom_level))
 
     # Draw fixed rod (constraining y-axis motion)
-    pygame.draw.line(screen, RED, (piston_x, int(crank_y)), (piston_x, fixed_rod_y), int(10 * zoom_level))
+    pygame.draw.line(screen, RED, (piston_x, int(crank_y + 4*zoomed_r)), (piston_x, fixed_rod_y + 4*zoomed_r + zoomed_l), int(10 * zoom_level))
 
     # Display force and parameter values
     font = pygame.font.SysFont(None, 30)
