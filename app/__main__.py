@@ -21,8 +21,9 @@ BLUE = (0, 0, 255)
 
 # Parameters (initial values)
 T = 10  # Motor torque (N*m)
-r = 100  # Crank radius (pixels)
+r = 226.77  # Crank radius (pixels)
 l = 200  # Connecting rod length (pixels)
+OFFSET = 200  # Offset for fixed rod end
 omega = 0.05  # Angular velocity (radians per frame)
 
 # Sliders
@@ -75,7 +76,7 @@ while running:
 
     # Calculate connecting rod end position (fixed rod end)
     fixed_rod_x = cx
-    fixed_rod_y = cy + math.sqrtl**2 - (crank_x - cx)**2)
+    fixed_rod_y = cy + OFFSET + r * math.sin(theta)
 
     # Calculate linear force
     force = calculate_force(T, r)
@@ -85,11 +86,11 @@ while running:
     pygame.draw.circle(screen, RED, (int(crank_x), int(crank_y)), 10)
 
     # Draw connecting rod
-    pygame.draw.line(screen, BLUE, (crank_x, crank_y), (fixed_rod_x, fixed_rod_y), 5)
+    pygame.draw.line(screen, BLUE, (crank_x, crank_y), (fixed_rod_x, fixed_rod_y - 50), 5)
     pygame.draw.circle(screen, BLACK, (int(fixed_rod_x), int(fixed_rod_y)), 10)
 
     # Draw fixed rod (constraining y-axis motion)
-    pygame.draw.line(screen, BLACK, (piston_x, cy), (piston_x, fixed_rod_y), 5)
+    pygame.draw.line(screen, BLACK, (piston_x, cy - 2 * l + fixed_rod_y), (piston_x, fixed_rod_y), 10)
 
     # Display force and parameter values
     font = pygame.font.SysFont(None, 30)
