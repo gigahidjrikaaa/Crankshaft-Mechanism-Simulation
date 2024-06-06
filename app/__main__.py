@@ -23,9 +23,18 @@ GREEN = (0, 255, 0)
 def cm_to_pixels(cm):
     return cm * 37.7952755906  # 1 cm = 37.7952755906 pixels
 
+def pixels_to_cm(pixels):
+    return pixels / 37.7952755906  # 1 pixel = 0.0264583333 cm
+
+def kgFcm_to_Ncm(kgFcm):
+    return kgFcm * 9.80665  # 1 kgF.cm = 9.80665 N.cm
+
+def Ncm_to_kgFcm(Ncm):
+    return Ncm / 9.80665  # 1 N.cm = 0.1019716213 kgF.cm
+
 # Parameters (initial values)
-T = 10  # Motor torque (N*m)
-r = cm_to_pixels(6)  # Crank radius (pixels)
+T = 10  # Motor torque (kgF*cm)
+r = cm_to_pixels(3)  # Crank radius (pixels)
 l = cm_to_pixels(30)  # Connecting rod length (pixels)
 OFFSET = cm_to_pixels(20)  # Offset for fixed rod end
 omega = 0.05  # Angular velocity (radians per frame)
@@ -33,7 +42,7 @@ omega = 0.05  # Angular velocity (radians per frame)
 # Sliders
 torque_slider = pygame_gui.elements.UIHorizontalSlider(
     relative_rect=pygame.Rect((20, 520), (200, 30)), 
-    start_value=T, value_range=(1, 100), manager=manager)
+    start_value=T, value_range=(kgFcm_to_Ncm(1), kgFcm_to_Ncm(100)), manager=manager)
 radius_slider = pygame_gui.elements.UIHorizontalSlider(
     relative_rect=pygame.Rect((20, 560), (200, 30)), 
     start_value=r, value_range=(cm_to_pixels(1), cm_to_pixels(20)), manager=manager)
@@ -65,7 +74,7 @@ zoom_level = 1.0
 
 # Function to calculate linear force
 def calculate_force(torque, crank_radius):
-    return torque / crank_radius
+    return torque / pixels_to_cm(crank_radius)
 
 while running:
     time_delta = clock.tick(60) / 1000.0  # Frame time in seconds
@@ -137,9 +146,9 @@ while running:
     # Display force and parameter values
     font = pygame.font.SysFont(None, 30)
     force_text = font.render(f'Force: {force:.2f} N', True, BLACK)
-    torque_text = font.render(f'Torque: {T:.2f} N*m', True, BLACK)
-    radius_text = font.render(f'Crank Radius: {zoomed_r:.2f} px', True, BLACK)
-    rod_length_text = font.render(f'Connecting Rod Length: {l:.2f} px', True, BLACK)
+    torque_text = font.render(f'Torque: {T:.2f} kgF.cm', True, BLACK)
+    radius_text = font.render(f'Crank Radius: {pixels_to_cm(r):.2f} cm', True, BLACK)
+    rod_length_text = font.render(f'Connecting Rod Length: {pixels_to_cm(l):.2f} cm', True, BLACK)
     omega_text = font.render(f'Angular Velocity: {omega:.2f} rad/s', True, BLACK)
     time_text = font.render(f'Time Scale: {time_scale:.2f}', True, BLACK)
 
