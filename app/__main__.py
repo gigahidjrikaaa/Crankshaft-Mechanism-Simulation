@@ -20,11 +20,14 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 
+def cm_to_pixels(cm):
+    return cm * 37.7952755906  # 1 cm = 37.7952755906 pixels
+
 # Parameters (initial values)
 T = 10  # Motor torque (N*m)
-r = 226.77  # Crank radius (pixels)
-l = 200  # Connecting rod length (pixels)
-OFFSET = 200  # Offset for fixed rod end
+r = cm_to_pixels(6)  # Crank radius (pixels)
+l = cm_to_pixels(20)  # Connecting rod length (pixels)
+OFFSET = cm_to_pixels(6)  # Offset for fixed rod end
 omega = 0.05  # Angular velocity (radians per frame)
 
 # Sliders
@@ -33,13 +36,16 @@ torque_slider = pygame_gui.elements.UIHorizontalSlider(
     start_value=T, value_range=(1, 100), manager=manager)
 radius_slider = pygame_gui.elements.UIHorizontalSlider(
     relative_rect=pygame.Rect((20, 560), (200, 30)), 
-    start_value=r, value_range=(1, 300), manager=manager)
+    start_value=r, value_range=(cm_to_pixels(1), cm_to_pixels(20)), manager=manager)
 rod_length_slider = pygame_gui.elements.UIHorizontalSlider(
     relative_rect=pygame.Rect((20, 600), (200, 30)), 
-    start_value=l, value_range=(100, 300), manager=manager)
+    start_value=l, value_range=(cm_to_pixels(10), cm_to_pixels(50)), manager=manager)
 omega_slider = pygame_gui.elements.UIHorizontalSlider(
     relative_rect=pygame.Rect((20, 640), (200, 30)), 
-    start_value=omega, value_range=(0.01, 0.1), manager=manager)
+    start_value=omega, value_range=(math.pi, 6 * math.pi), manager=manager)
+time_slider = pygame_gui.elements.UIHorizontalSlider(
+    relative_rect=pygame.Rect((20, 680), (200, 30)), 
+    start_value=1.0, value_range=(0.1, 5.0), manager=manager)  # Time controller slider
 
 # Center of crankshaft
 cx, cy = WIDTH // 2, HEIGHT // 2 - 50
@@ -94,6 +100,7 @@ while running:
     r = radius_slider.get_current_value()
     l = rod_length_slider.get_current_value()
     omega = omega_slider.get_current_value()
+    time_scale = time_slider.get_current_value()  # Get the time scaling factor
 
     screen.fill(WHITE)
 
@@ -124,7 +131,7 @@ while running:
     pygame.draw.circle(screen, BLACK, (int(fixed_rod_x), int(fixed_rod_y)), int(10 * zoom_level))
 
     # Draw fixed rod (constraining y-axis motion)
-    pygame.draw.line(screen, BLACK, (piston_x, cy - 2 * l + fixed_rod_y), (piston_x, fixed_rod_y), 10)
+    pygame.draw.line(screen, RED, (piston_x, int(crank_y)), (piston_x, fixed_rod_y), int(10 * zoom_level))
 
     # Display force and parameter values
     font = pygame.font.SysFont(None, 30)
@@ -133,12 +140,14 @@ while running:
     radius_text = font.render(f'Crank Radius: {zoomed_r:.2f} px', True, BLACK)
     rod_length_text = font.render(f'Connecting Rod Length: {l:.2f} px', True, BLACK)
     omega_text = font.render(f'Angular Velocity: {omega:.2f} rad/s', True, BLACK)
+    time_text = font.render(f'Time Scale: {time_scale:.2f}', True, BLACK)
 
     screen.blit(force_text, (250, 520))
     screen.blit(torque_text, (250, 550))
     screen.blit(radius_text, (250, 580))
     screen.blit(rod_length_text, (250, 610))
     screen.blit(omega_text, (250, 640))
+    screen.blit(time_text, (250, 670))
 
     # Update GUI elements
     manager.update(time_delta)
@@ -148,7 +157,7 @@ while running:
     pygame.display.flip()
 
     # Update angle
-    theta += omega
+    theta += omega * time_delta * time_scale
     if theta >= 2 * math.pi:
         theta -= 2 * math.pi
 
