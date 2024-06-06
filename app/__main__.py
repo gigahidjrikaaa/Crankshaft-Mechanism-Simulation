@@ -18,6 +18,7 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
 
 # Parameters (initial values)
 T = 10  # Motor torque (N*m)
@@ -29,10 +30,10 @@ omega = 0.05  # Angular velocity (radians per frame)
 # Sliders
 torque_slider = pygame_gui.elements.UIHorizontalSlider(
     relative_rect=pygame.Rect((20, 520), (200, 30)), 
-    start_value=T, value_range=(1, 50), manager=manager)
+    start_value=T, value_range=(1, 100), manager=manager)
 radius_slider = pygame_gui.elements.UIHorizontalSlider(
     relative_rect=pygame.Rect((20, 560), (200, 30)), 
-    start_value=r, value_range=(50, 150), manager=manager)
+    start_value=r, value_range=(1, 300), manager=manager)
 rod_length_slider = pygame_gui.elements.UIHorizontalSlider(
     relative_rect=pygame.Rect((20, 600), (200, 30)), 
     start_value=l, value_range=(100, 300), manager=manager)
@@ -48,6 +49,15 @@ running = True
 theta = 0
 clock = pygame.time.Clock()
 
+# Make the pygame canvas draggable
+is_dragging = False
+offset_x = 0
+offset_y = 0
+
+# Zoom level
+zoom_level = 1.0
+
+# Function to calculate linear force
 def calculate_force(torque, crank_radius):
     return torque / crank_radius
 
@@ -56,6 +66,27 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                if screen.get_rect().collidepoint(event.pos):
+                    is_dragging = True
+                    offset_x = event.pos[0]
+                    offset_y = event.pos[1]
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:
+                is_dragging = False
+        elif event.type == pygame.MOUSEMOTION:
+            if is_dragging:
+                x, y = event.pos
+                dx = x - offset_x
+                dy = y - offset_y
+                cx += dx
+                cy += dy
+                offset_x = x
+                offset_y = y
+        elif event.type == pygame.MOUSEWHEEL:
+            zoom_level += event.y * 0.1
+            zoom_level = max(0.1, min(zoom_level, 5))  # Clamp the zoom level between 0.1 and 5
         manager.process_events(event)
 
     # Update parameters from sliders
@@ -66,28 +97,31 @@ while running:
 
     screen.fill(WHITE)
 
-    # Calculate crank pin position
-    crank_x = cx + r * math.cos(theta)
-    crank_y = cy + r * math.sin(theta)
+    # Calculate zoomed crank pin position
+    zoomed_r = r * zoom_level
+    crank_x = cx + zoomed_r * math.cos(theta)
+    crank_y = cy + zoomed_r * math.sin(theta)
 
-    # Calculate piston position
+    # Calculate zoomed piston position
     piston_x = cx
-    piston_y = cy + r * math.sin(theta)
+    piston_y = cy + zoomed_r * math.sin(theta)
 
-    # Calculate connecting rod end position (fixed rod end)
+    # Calculate zoomed connecting rod end position (fixed rod end)
+    zoomed_offset = OFFSET * zoom_level
     fixed_rod_x = cx
-    fixed_rod_y = cy + OFFSET + r * math.sin(theta)
+    fixed_rod_y = cy + zoomed_offset + zoomed_r * math.sin(theta)
 
     # Calculate linear force
-    force = calculate_force(T, r)
+    force = calculate_force(T, zoomed_r)
 
     # Draw crankshaft
     pygame.draw.line(screen, BLACK, (cx, cy), (crank_x, crank_y), 5)
-    pygame.draw.circle(screen, RED, (int(crank_x), int(crank_y)), 10)
+    pygame.draw.circle(screen, RED, (int(crank_x), int(crank_y)), int(10 * zoom_level))
+    pygame.draw.circle(screen, GREEN, (cx, cy), int(zoomed_r), int(5 * zoom_level))
 
     # Draw connecting rod
-    pygame.draw.line(screen, BLUE, (crank_x, crank_y), (fixed_rod_x, fixed_rod_y - 50), 5)
-    pygame.draw.circle(screen, BLACK, (int(fixed_rod_x), int(fixed_rod_y)), 10)
+    pygame.draw.line(screen, BLUE, (crank_x, crank_y), (fixed_rod_x, fixed_rod_y - int(50 * zoom_level)), 5)
+    pygame.draw.circle(screen, BLACK, (int(fixed_rod_x), int(fixed_rod_y)), int(10 * zoom_level))
 
     # Draw fixed rod (constraining y-axis motion)
     pygame.draw.line(screen, BLACK, (piston_x, cy - 2 * l + fixed_rod_y), (piston_x, fixed_rod_y), 10)
@@ -96,7 +130,7 @@ while running:
     font = pygame.font.SysFont(None, 30)
     force_text = font.render(f'Force: {force:.2f} N', True, BLACK)
     torque_text = font.render(f'Torque: {T:.2f} N*m', True, BLACK)
-    radius_text = font.render(f'Crank Radius: {r:.2f} px', True, BLACK)
+    radius_text = font.render(f'Crank Radius: {zoomed_r:.2f} px', True, BLACK)
     rod_length_text = font.render(f'Connecting Rod Length: {l:.2f} px', True, BLACK)
     omega_text = font.render(f'Angular Velocity: {omega:.2f} rad/s', True, BLACK)
 
