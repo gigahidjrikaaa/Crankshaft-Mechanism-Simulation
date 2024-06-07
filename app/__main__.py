@@ -7,7 +7,7 @@ pygame.init()
 
 # Screen dimensions
 WIDTH, HEIGHT = 800, 700
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 pygame.display.set_caption("Crankshaft Mechanism Simulation")
 
 # Pygame GUI Manager
@@ -35,7 +35,7 @@ def Ncm_to_kgFcm(Ncm):
 # Parameters (initial values)
 T = 10  # Motor torque (kgF*cm)
 r = cm_to_pixels(3)  # Crank radius (pixels)
-l = cm_to_pixels(30)  # Connecting rod length (pixels)
+l = cm_to_pixels(15)  # Connecting rod length (pixels)
 OFFSET = cm_to_pixels(20)  # Offset for fixed rod end
 omega = 2*math.pi  # Angular velocity (radians per frame)
 
