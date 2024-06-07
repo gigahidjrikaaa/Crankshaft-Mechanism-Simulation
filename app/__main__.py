@@ -126,10 +126,20 @@ while running:
     zoomed_offset = OFFSET * zoom_level
     fixed_rod_x = cx
     fixed_rod_y = cy + zoomed_offset + zoomed_r * math.sin(theta)
+    initial_fixed_rod_y = cy + zoomed_offset + zoomed_r * math.sin(-math.pi/2)
     zoomed_l = l * zoom_level
 
     # Calculate linear force
     force = calculate_force(T, r)
+
+    # Draw the frame
+    FRAME_OFFSET_X = cm_to_pixels(50) * zoom_level
+    FRAME_OFFSET_Y = cm_to_pixels(60) * zoom_level
+    SECOND_LEVEL_Y_OFFSET = cm_to_pixels(30) * zoom_level
+    pygame.draw.line(screen, GREEN, (cx - FRAME_OFFSET_X, cy), (cx + FRAME_OFFSET_X, cy), int(20 * zoom_level)) # Top Frame
+    pygame.draw.line(screen, GREEN, (cx - FRAME_OFFSET_X, cy), (cx - FRAME_OFFSET_X, cy + FRAME_OFFSET_Y), int(20 * zoom_level)) # Left Frame
+    pygame.draw.line(screen, GREEN, (cx + FRAME_OFFSET_X, cy), (cx + FRAME_OFFSET_X, cy + FRAME_OFFSET_Y), int(20 * zoom_level)) # Right Frame
+    pygame.draw.line(screen, GREEN, (cx - FRAME_OFFSET_X, cy + SECOND_LEVEL_Y_OFFSET), (cx + FRAME_OFFSET_X, cy + SECOND_LEVEL_Y_OFFSET), int(20 * zoom_level)) # Holder Frame
 
     # Draw crankshaft
     pygame.draw.line(screen, BLACK, (cx, cy), (crank_x, crank_y), int(10 * zoom_level))
@@ -142,6 +152,14 @@ while running:
 
     # Draw fixed rod (constraining y-axis motion)
     pygame.draw.line(screen, RED, (piston_x, int(crank_y + 4*zoomed_r)), (piston_x, fixed_rod_y + 4*zoomed_r + zoomed_l), int(10 * zoom_level))
+
+    # Draw a fixed "human body" on the edge of the fixed rod
+    pygame.draw.rect(screen, BLACK, (piston_x - 40, initial_fixed_rod_y + 4*zoomed_r + zoomed_l, int(80), int(120)), 0)
+    
+    # Draw the displacement caused by piston on the edge of the fixed rod
+    pygame.draw.rect(screen, RED, (piston_x - 20, fixed_rod_y + 4*zoomed_r + zoomed_l, int(40), int(60)), 0)
+
+    
 
     # Display force and parameter values
     font = pygame.font.SysFont(None, 30)
