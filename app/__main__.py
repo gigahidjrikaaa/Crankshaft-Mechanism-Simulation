@@ -37,7 +37,7 @@ T = 10  # Motor torque (kgF*cm)
 r = cm_to_pixels(3)  # Crank radius (pixels)
 l = cm_to_pixels(30)  # Connecting rod length (pixels)
 OFFSET = cm_to_pixels(20)  # Offset for fixed rod end
-omega = 0.05  # Angular velocity (radians per frame)
+omega = 2*math.pi  # Angular velocity (radians per frame)
 
 # Sliders
 torque_slider = pygame_gui.elements.UIHorizontalSlider(
@@ -129,7 +129,7 @@ while running:
     zoomed_l = l * zoom_level
 
     # Calculate linear force
-    force = calculate_force(T, zoomed_r)
+    force = calculate_force(T, r)
 
     # Draw crankshaft
     pygame.draw.line(screen, BLACK, (cx, cy), (crank_x, crank_y), int(10 * zoom_level))
@@ -145,7 +145,7 @@ while running:
 
     # Display force and parameter values
     font = pygame.font.SysFont(None, 30)
-    force_text = font.render(f'Force: {force:.2f} N', True, BLACK)
+    force_text = font.render(f'Force: {kgFcm_to_Ncm(force):.2f} N', True, BLACK)
     torque_text = font.render(f'Torque: {T:.2f} kgF.cm', True, BLACK)
     radius_text = font.render(f'Crank Radius: {pixels_to_cm(r):.2f} cm', True, BLACK)
     rod_length_text = font.render(f'Connecting Rod Length: {pixels_to_cm(l):.2f} cm', True, BLACK)
