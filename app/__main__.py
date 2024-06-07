@@ -6,7 +6,7 @@ import math
 pygame.init()
 
 # Screen dimensions
-WIDTH, HEIGHT = 800, 700
+WIDTH, HEIGHT = 900, 800
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 pygame.display.set_caption("Crankshaft Mechanism Simulation")
 
@@ -19,6 +19,11 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
+
+SCREEN_OFFSET_X = 250
+SCREEN_OFFSET_Y = 40
+COL_X_POS = [WIDTH/3, 2*WIDTH/3]
+COL_Y_POS = [HEIGHT*6/8, HEIGHT*6/8 + SCREEN_OFFSET_Y, HEIGHT*6/8 + 2*SCREEN_OFFSET_Y, HEIGHT*6/8 + 3*SCREEN_OFFSET_Y, HEIGHT*6/8 + 4*SCREEN_OFFSET_Y]
 
 def cm_to_pixels(cm):
     return cm * 37.7952755906  # 1 cm = 37.7952755906 pixels
@@ -41,19 +46,19 @@ omega = 2*math.pi  # Angular velocity (radians per frame)
 
 # Sliders
 torque_slider = pygame_gui.elements.UIHorizontalSlider(
-    relative_rect=pygame.Rect((20, 520), (200, 30)), 
-    start_value=T, value_range=(kgFcm_to_Ncm(1), kgFcm_to_Ncm(100)), manager=manager)
+    relative_rect=pygame.Rect((20, COL_Y_POS[0]), (200, 30)), 
+    start_value=T, value_range=(1, 200), manager=manager)
 radius_slider = pygame_gui.elements.UIHorizontalSlider(
-    relative_rect=pygame.Rect((20, 560), (200, 30)), 
+    relative_rect=pygame.Rect((20, COL_Y_POS[1]), (200, 30)), 
     start_value=r, value_range=(cm_to_pixels(1), cm_to_pixels(20)), manager=manager)
 rod_length_slider = pygame_gui.elements.UIHorizontalSlider(
-    relative_rect=pygame.Rect((20, 600), (200, 30)), 
+    relative_rect=pygame.Rect((20, COL_Y_POS[2]), (200, 30)), 
     start_value=l, value_range=(cm_to_pixels(5), cm_to_pixels(30)), manager=manager)
 omega_slider = pygame_gui.elements.UIHorizontalSlider(
-    relative_rect=pygame.Rect((20, 640), (200, 30)), 
+    relative_rect=pygame.Rect((20, COL_Y_POS[3]), (200, 30)), 
     start_value=omega, value_range=(math.pi, 6 * math.pi), manager=manager)
 time_slider = pygame_gui.elements.UIHorizontalSlider(
-    relative_rect=pygame.Rect((20, 680), (200, 30)), 
+    relative_rect=pygame.Rect((20, COL_Y_POS[4]), (200, 30)), 
     start_value=1.0, value_range=(0.1, 3.0), manager=manager)  # Time controller slider
 
 # Center of crankshaft
@@ -75,6 +80,10 @@ zoom_level = 1.0
 # Function to calculate linear force
 def calculate_force(torque, crank_radius):
     return torque / pixels_to_cm(crank_radius)
+
+# Function to calculate body spring force - Hooke's Law
+def calculate_body_spring_force(constant, displacement):
+    return constant * displacement
 
 while running:
     time_delta = clock.tick(60) / 1000.0  # Frame time in seconds
@@ -154,28 +163,37 @@ while running:
     pygame.draw.line(screen, RED, (piston_x, int(crank_y + 4*zoomed_r)), (piston_x, fixed_rod_y + 4*zoomed_r + zoomed_l), int(10 * zoom_level))
 
     # Draw a fixed "human body" on the edge of the fixed rod
-    pygame.draw.rect(screen, BLACK, (piston_x - 40, initial_fixed_rod_y + 4*zoomed_r + zoomed_l, int(80), int(120)), 0)
+    OFFSET_BODY_X = cm_to_pixels(35) * zoom_level # Assumption: Human body width is 70 cm
+    OFFSET_BODY_Y = cm_to_pixels(10) * zoom_level # Assumption: Human body depth is 20 cm
+    pygame.draw.rect(screen, BLACK, (piston_x - OFFSET_BODY_X, initial_fixed_rod_y + 4*zoomed_r + zoomed_l, int(2*OFFSET_BODY_X), int(2*OFFSET_BODY_Y)), 0)
     
     # Draw the displacement caused by piston on the edge of the fixed rod
-    pygame.draw.rect(screen, RED, (piston_x - 20, fixed_rod_y + 4*zoomed_r + zoomed_l, int(40), int(60)), 0)
-
-    
+    pygame.draw.rect(screen, RED, (piston_x - OFFSET_BODY_X/4, fixed_rod_y + 4*zoomed_r + zoomed_l, int(OFFSET_BODY_X/2), int(OFFSET_BODY_Y/4)), 0)
 
     # Display force and parameter values
     font = pygame.font.SysFont(None, 30)
-    force_text = font.render(f'Force: {kgFcm_to_Ncm(force):.2f} N', True, BLACK)
     torque_text = font.render(f'Torque: {T:.2f} kgF.cm', True, BLACK)
     radius_text = font.render(f'Crank Radius: {pixels_to_cm(r):.2f} cm', True, BLACK)
     rod_length_text = font.render(f'Connecting Rod Length: {pixels_to_cm(l):.2f} cm', True, BLACK)
     omega_text = font.render(f'Angular Velocity: {omega:.2f} rad/s', True, BLACK)
     time_text = font.render(f'Time Scale: {time_scale:.2f}', True, BLACK)
 
-    screen.blit(force_text, (250, 520))
-    screen.blit(torque_text, (250, 550))
-    screen.blit(radius_text, (250, 580))
-    screen.blit(rod_length_text, (250, 610))
-    screen.blit(omega_text, (250, 640))
-    screen.blit(time_text, (250, 670))
+    # Column 2
+    SPRING_CONSTANT = 2 # Spring constant in N/cm
+    body_spring_force = calculate_body_spring_force(SPRING_CONSTANT, 3*math.sin(theta) + 3)
+    body_spring_force_text = font.render(f'Body Spring Force: {body_spring_force:.2f} N', True, BLACK)
+    
+    TOTAL_FORCE = kgFcm_to_Ncm(force) # - body_spring_force
+    force_text = font.render(f'Force: {TOTAL_FORCE:.2f} N', True, BLACK)
+
+    screen.blit(torque_text, (COL_X_POS[0], COL_Y_POS[0]))
+    screen.blit(radius_text, (COL_X_POS[0], COL_Y_POS[1]))
+    screen.blit(rod_length_text, (COL_X_POS[0], COL_Y_POS[2]))
+    screen.blit(omega_text, (COL_X_POS[0], COL_Y_POS[3]))
+    screen.blit(time_text, (COL_X_POS[0], COL_Y_POS[4]))
+
+    screen.blit(force_text, (COL_X_POS[1], COL_Y_POS[0]))
+    screen.blit(body_spring_force_text, (COL_X_POS[1], COL_Y_POS[1]))
 
     # Update GUI elements
     manager.update(time_delta)
