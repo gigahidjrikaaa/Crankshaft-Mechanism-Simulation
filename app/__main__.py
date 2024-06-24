@@ -79,6 +79,10 @@ zoom_level = 1.0
 
 # Function to calculate linear force
 def calculate_force(torque, crank_radius):
+    return torque / pixels_to_cm(crank_radius) * (math.sin(theta + math.pi/2))
+
+# Function to calculate maximum linear force
+def calculate_max_force(torque, crank_radius):
     return torque / pixels_to_cm(crank_radius)
 
 # Function to calculate body spring force - Hooke's Law
@@ -139,6 +143,7 @@ while running:
     zoomed_l = l * zoom_level
 
     # Calculate linear force
+    max_force = calculate_max_force(T, r)
     force = calculate_force(T, r)
 
     # Draw the frame
@@ -168,15 +173,16 @@ while running:
     pygame.draw.rect(screen, BLACK, (piston_x - OFFSET_BODY_X, initial_fixed_rod_y + 4*zoomed_r + zoomed_l, int(2*OFFSET_BODY_X), int(2*OFFSET_BODY_Y)), 0)
     
     # Draw the displacement caused by piston on the edge of the fixed rod
-    pygame.draw.rect(screen, RED, (piston_x - OFFSET_BODY_X/4, fixed_rod_y + 4*zoomed_r + zoomed_l, int(OFFSET_BODY_X/2), int(OFFSET_BODY_Y/4)), 0)
+    pygame.draw.rect(screen, RED, (piston_x - OFFSET_BODY_X/8, fixed_rod_y + 4*zoomed_r + zoomed_l, int(OFFSET_BODY_X/4), int(OFFSET_BODY_Y/4)), 0)
 
     # Display force and parameter values
     font = pygame.font.SysFont(None, 30)
     torque_text = font.render(f'Torque: {T:.2f} kgF.cm', True, BLACK)
     radius_text = font.render(f'Crank Radius: {pixels_to_cm(r):.2f} cm', True, BLACK)
-    rod_length_text = font.render(f'Connecting Rod Length: {pixels_to_cm(l):.2f} cm', True, BLACK)
+    rod_length_text = font.render(f'Rod Length: {pixels_to_cm(l):.2f} cm', True, BLACK)
     omega_text = font.render(f'Angular Velocity: {omega:.2f} rad/s', True, BLACK)
     time_text = font.render(f'Time Scale: {time_scale:.2f}', True, BLACK)
+    pump_frequency = font.render(f'Pump Frequency: {omega/(2*math.pi) * 60:.2f} press/minute', True, BLACK)
 
     # Column 2
     SPRING_CONSTANT = 2 # Spring constant in N/cm
@@ -185,6 +191,7 @@ while running:
     
     TOTAL_FORCE = kgFcm_to_Ncm(force) # - body_spring_force
     force_text = font.render(f'Force: {TOTAL_FORCE:.2f} N', True, BLACK)
+    max_force_text = font.render(f'Max Force: {kgFcm_to_Ncm(max_force):.2f} N', True, BLACK)
 
     screen.blit(torque_text, (COL_X_POS[0], COL_Y_POS[0]))
     screen.blit(radius_text, (COL_X_POS[0], COL_Y_POS[1]))
@@ -193,7 +200,9 @@ while running:
     screen.blit(time_text, (COL_X_POS[0], COL_Y_POS[4]))
 
     screen.blit(force_text, (COL_X_POS[1], COL_Y_POS[0]))
-    screen.blit(body_spring_force_text, (COL_X_POS[1], COL_Y_POS[1]))
+    screen.blit(max_force_text, (COL_X_POS[1], COL_Y_POS[1]))
+    screen.blit(body_spring_force_text, (COL_X_POS[1], COL_Y_POS[2]))
+    screen.blit(pump_frequency, (COL_X_POS[1], COL_Y_POS[3]))
 
     # Update GUI elements
     manager.update(time_delta)
